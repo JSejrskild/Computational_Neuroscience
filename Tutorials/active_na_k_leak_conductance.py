@@ -6,6 +6,7 @@ Includes activation (m, n) and inactivation (h) gating variables and shows how
 the membrane responds to varying input amplitudes.
 
 Author: Matthew J. Crossley
+Extreme comments: Johanne S. Rejsenhus 
 """
 
 import numpy as np
@@ -13,71 +14,86 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 # === Constants ===
-K_in = 140
-K_out = 5
-Na_in = 15
-Na_out = 145
-E_K = 61 * np.log10(K_out / K_in)
-E_Na = 61 * np.log10(Na_out / Na_in)
-E_L = -65
-g_K_max = 10
-g_Na_max = 15
-g_L = 0.1
+# These constants can be found in litterature from biology and is where these sinmulations have the "true" values from
+
+K_in = 140 # Pottasium concentration inside the cell
+K_out = 5 # Pottasium concentration outside the cell
+Na_in = 15 # Sodium concentration inside the cell
+Na_out = 145 # Sodium concentration outside the cell
+E_K = 61 * np.log10(K_out / K_in) # Equilibrium potential for K+
+E_Na = 61 * np.log10(Na_out / Na_in) # Equilibrium potential for Na+
+E_L = -65 # Equilibrium potential for leak current - constant
+g_K_max = 10 # Maximum K⁺ 
+g_Na_max = 15 # Maximum Na⁺ 
+g_L = 0.1 # Leak conductance
+
 
 # === Gating kinetics ===
-def alpha_m(V): return 0.1 * (V + 40) / (1 - np.exp(-(V + 40) / 10 + 1e-6))
-def beta_m(V): return 4.0 * np.exp(-(V + 65) / 18)
-def alpha_h(V): return 0.07 * np.exp(-(V + 65) / 20)
-def beta_h(V): return 1 / (1 + np.exp(-(V + 35) / 10))
-def alpha_n(V): return 0.01 * (V + 55) / (1 - np.exp(-(V + 55) / 10 + 1e-6))
-def beta_n(V): return 0.125 * np.exp(-(V + 65) / 80)
+# Alphas and betas are the rate constants for the opening and closing of the ion channels
+# Alphas activates the channels and betas inactivates them 
+
+def alpha_m(V): return 0.1 * (V + 40) / (1 - np.exp(-(V + 40) / 10 + 1e-6)) # rate of opening for Na+ channels after depolarization
+def beta_m(V): return 4.0 * np.exp(-(V + 65) / 18) # rate of closing for Na+ channels when repolarizing
+def alpha_h(V): return 0.07 * np.exp(-(V + 65) / 20) # rate of inactivation for Na+ channels despite depolarization
+def beta_h(V): return 1 / (1 + np.exp(-(V + 35) / 10)) # rate of reactivation for Na+ channels - relative refractory period
+def alpha_n(V): return 0.01 * (V + 55) / (1 - np.exp(-(V + 55) / 10 + 1e-6)) # rate of opening for K+ channels after depolarization -> in order to repolarize
+def beta_n(V): return 0.125 * np.exp(-(V + 65) / 80) # Rate of closing for K+ channels after repolarisation -> This is a bit slow, hence hyperpolarization
 
 # === Simulation parameters ===
-T = 300
-dt = 0.1
-t = np.arange(0, T, dt)
-N = len(t)
+T = 300 # Total time to simulate (ms)
+dt = 0.1 # Time step (ms)
+t = np.arange(0, T, dt) # Time array -> 0 to 300 ms with 0.1 ms intervals
+N = len(t) # Number of time points
 
-pulse_amps = [0.5, 5.0, 10.0]
-colors = cm.Reds(np.linspace(0.4, 0.9, len(pulse_amps)))
-pulse_width = N // 6
+# Is this the currents that are injected into the cell?
+pulse_amps = [0.5, 5.0, 10.0] 
+colors = cm.Reds(np.linspace(0.4, 0.9, len(pulse_amps))) 
+pulse_width = N // 6 
 start = N // 3
 end = start + pulse_width
 
 # === Storage ===
-V_traces, I_K_traces, I_Na_traces, I_L_traces = [], [], [], []
-g_K_traces, g_Na_traces = [], []
-m_traces, h_traces, n_traces = [], [], []
-I_ext_traces = []
+V_traces, I_K_traces, I_Na_traces, I_L_traces = [], [], [], [] # These are the traces of voltage and the three currents
+g_K_traces, g_Na_traces = [], [] # Conductace of K+ and Na+
+# Conductance is how easy the ions can flow through the channels/membrane
+m_traces, h_traces, n_traces = [], [], [] # Gating variables for Na+ and K+ channels
+I_ext_traces = [] # External input currents
 
 for amp in pulse_amps:
-    I_ext = np.zeros(N)
-    I_ext[start:end] = amp
+    I_ext = np.zeros(N)  # External input is a  vector of zeros with the length of N
+    I_ext[start:end] = amp # The external input is set to the amplitude of the pulse
 
+# Here we initialize the variables that we need to keep track of as vectors of zeros
     V = np.zeros(N)
-    V[0] = -65
+    V[0] = -65 # Starting membrane potential 
     m = np.zeros(N)
     h = np.ones(N)
     n = np.zeros(N)
-    g_K = np.zeros(N)
+    g_K = np.zeros(N) 
     g_Na = np.zeros(N)
     I_K = np.zeros(N)
     I_Na = np.zeros(N)
     I_L = np.zeros(N)
 
-    m[0] = alpha_m(V[0]) / (alpha_m(V[0]) + beta_m(V[0]))
-    h[0] = alpha_h(V[0]) / (alpha_h(V[0]) + beta_h(V[0]))
-    n[0] = alpha_n(V[0]) / (alpha_n(V[0]) + beta_n(V[0]))
+    m[0] = alpha_m(V[0]) / (alpha_m(V[0]) + beta_m(V[0])) # Initial value of m
+    h[0] = alpha_h(V[0]) / (alpha_h(V[0]) + beta_h(V[0])) # Initial value of h
+    n[0] = alpha_n(V[0]) / (alpha_n(V[0]) + beta_n(V[0])) # Initial value of n
 
-    g_K[0] = g_K_max * n[0]**4
-    g_Na[0] = g_Na_max * m[0]**3 * h[0]
+# Conductances
+    g_K[0] = g_K_max * n[0]**4  # Initial value of K+ conductance
+    g_Na[0] = g_Na_max * m[0]**3 * h[0] # Initial value of Na+ conductance
+# Maybe ask Matthew about the "activation gates (3/4)" and where they are expressed in the code or where that initial assumption comes from
 
-    I_K[0] = g_K[0] * (V[0] - E_K)
-    I_Na[0] = g_Na[0] * (V[0] - E_Na)
-    I_L[0] = g_L * (V[0] - E_L)
+# Currents
+    I_K[0] = g_K[0] * (V[0] - E_K) # Initial value of K+ current
+    I_Na[0] = g_Na[0] * (V[0] - E_Na) # Initial value of Na+ current
+    I_L[0] = g_L * (V[0] - E_L)  # Initial value of leak current
 
+# Now we are ready to simulate the model - Yay
     for i in range(1, N):
-        a_m, b_m = alpha_m(V[i-1]), beta_m(V[i-1])
+        # Update gating variables, so they follow the time steps 
+        # Using the last value of the gating variable to calculate the new value
+        a_m, b_m = alpha_m(V[i-1]), beta_m(V[i-1]) 
         a_h, b_h = alpha_h(V[i-1]), beta_h(V[i-1])
         a_n, b_n = alpha_n(V[i-1]), beta_n(V[i-1])
 
@@ -85,7 +101,7 @@ for amp in pulse_amps:
         tau_h = 1 / (a_h + b_h)
         tau_n = 1 / (a_n + b_n)
 
-        m_inf = a_m * tau_m
+        m_inf = a_m * tau_m #
         h_inf = a_h * tau_h
         n_inf = a_n * tau_n
 
