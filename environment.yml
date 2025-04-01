@@ -1,0 +1,8 @@
+name: compneuro
+channels:
+  - defaults
+dependencies:
+  - numpy
+  - pandas
+  - matplotlib
+

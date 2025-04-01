@@ -1,0 +1,19 @@
+
+
+Sådan sætter du (forhåbentligt) dit environment op uden probs
+
+1. Kør følgende i terminalen:
+
+    conda env create -f environment.yml
+
+Sørg for at din .yml fil har de rigtige informationer (navn, pakker)
+
+2. Aktiver miljøet, kør dette i terminalen:
+
+    conda activate my_environment <- her er så navnet du har sat på dit environment
+
+3. Vælg miljøet 
+
+a. Cmd + Shift + P (Mac) eller Ctrl + Shift + P (Windows/Linux).
+b. Python: Select Interpreter
+c. Vælg den interpreter som har navnet på dit miljø
