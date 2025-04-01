@@ -82,7 +82,8 @@ for amp in pulse_amps:
 # Conductances
     g_K[0] = g_K_max * n[0]**4  # Initial value of K+ conductance
     g_Na[0] = g_Na_max * m[0]**3 * h[0] # Initial value of Na+ conductance
-# Maybe ask Matthew about the "activation gates (3/4)" and where they are expressed in the code or where that initial assumption comes from
+# Maybe ask Matthew about the "activation gates (3/4)" 
+# and where they are expressed in the code or where that initial assumption comes from
 
 # Currents
     I_K[0] = g_K[0] * (V[0] - E_K) # Initial value of K+ current
@@ -101,25 +102,30 @@ for amp in pulse_amps:
         tau_h = 1 / (a_h + b_h)
         tau_n = 1 / (a_n + b_n)
 
-        m_inf = a_m * tau_m #
-        h_inf = a_h * tau_h
-        n_inf = a_n * tau_n
+# Steady state values of the gating variables
+        m_inf = a_m * tau_m # Probability of the Na+ channel being open at a given time
+        h_inf = a_h * tau_h # Probability of the Na+ channel being inactivated at a given time
+        n_inf = a_n * tau_n # Probability of the K+ channel being open at a given time
 
-        m[i] = m[i-1] + (m_inf - m[i-1]) / tau_m * dt
+# Updating the gating variables
+        m[i] = m[i-1] + (m_inf - m[i-1]) / tau_m * dt 
         h[i] = h[i-1] + (h_inf - h[i-1]) / tau_h * dt
         n[i] = n[i-1] + (n_inf - n[i-1]) / tau_n * dt
 
-        g_K[i] = g_K_max * n[i]**4
+        g_K[i] = g_K_max * n[i]**4 # Here we again have the something to the power of 4 - maybe ask Matthew about this
         g_Na[i] = g_Na_max * m[i]**3 * h[i]
 
-        I_K[i] = g_K[i] * (V[i-1] - E_K)
+# Currents flowing through the channels given by the membrane potential V from the previous time step and the equilibrium potentials
+        I_K[i] = g_K[i] * (V[i-1] - E_K) 
         I_Na[i] = g_Na[i] * (V[i-1] - E_Na)
         I_L[i] = g_L * (V[i-1] - E_L)
 
-        dVdt = - (I_K[i] + I_Na[i] + I_L[i]) + I_ext[i-1]
-        V[i] = V[i-1] + dVdt * dt
+# Update membrane potential 
+        dVdt = - (I_K[i] + I_Na[i] + I_L[i]) + I_ext[i-1] # The differential equation for the membrane potential
+        V[i] = V[i-1] + dVdt * dt # Update the membrane potential
 
-    V_traces.append(V)
+# Store the traces - this is the data that we want to plot :)
+    V_traces.append(V) 
     I_K_traces.append(I_K)
     I_Na_traces.append(I_Na)
     I_L_traces.append(I_L)
@@ -133,44 +139,54 @@ for amp in pulse_amps:
 # === Plotting ===
 fig, ax = plt.subplots(10, 1, figsize=(10, 14), sharex=True)
 
+# Plotting the external input currents
 for i, I in enumerate(I_ext_traces):
     ax[0].plot(t, I, label=f'{pulse_amps[i]} mV', color=colors[i])
 ax[0].set_ylabel('Input')
 ax[0].set_title('External Input Currents')
 
+# Plotting the membrane potentials V
 for i, V in enumerate(V_traces):
     ax[1].plot(t, V, color=colors[i])
 ax[1].set_ylabel('Membrane V (mV)')
 ax[1].set_title('Membrane Potential')
 
+# Plotting the K+ currents
 for i, I in enumerate(I_K_traces):
     ax[2].plot(t, I, color=colors[i])
 ax[2].set_ylabel('K⁺ Current\n(+ out, - in)')
 
+# Plotting the Na+ currents
 for i, I in enumerate(I_Na_traces):
     ax[3].plot(t, I, color=colors[i])
 ax[3].set_ylabel('Na⁺ Current\n(+ out, - in)')
 
+# Plotting the leak currents
 for i, I in enumerate(I_L_traces):
     ax[4].plot(t, I, color=colors[i])
 ax[4].set_ylabel('Leak Current\n(+ out, - in)')
 
+# Plotting the K+ conductance - how easy the ions can flow through the channels/membrane
 for i, g in enumerate(g_K_traces):
     ax[5].plot(t, g, color=colors[i])
 ax[5].set_ylabel('g_K')
 
+# Plotting the Na+ conductance - how easy the ions can flow through the channels/membrane
 for i, g in enumerate(g_Na_traces):
     ax[6].plot(t, g, color=colors[i])
 ax[6].set_ylabel('g_Na')
 
+# Plotting the gating variables - The probability of Na being open
 for i, m in enumerate(m_traces):
     ax[7].plot(t, m, color=colors[i])
 ax[7].set_ylabel('Na⁺ m(t)')
 
+# Plotting the gating variables - The probability of Na being inactivated
 for i, h in enumerate(h_traces):
     ax[8].plot(t, h, color=colors[i])
 ax[8].set_ylabel('Na⁺ h(t)')
 
+# Plotting the gating variables - The probability of K being open
 for i, n in enumerate(n_traces):
     ax[9].plot(t, n, color=colors[i])
 ax[9].set_ylabel('K⁺ n(t)')
